@@ -23,6 +23,7 @@ See [`CLAUDE.md`](CLAUDE.md) for the full agent instructions.
 | Project | Description | Status |
 |---------|-------------|--------|
 | [**Self-Healing Repo**](self-healing-repo/) | AI-powered PR reviewer that detects bugs, security issues, lint problems, and dead code — then posts structured reviews on GitHub | ✅ Live |
+| [**AI Opportunity Radar**](ai-opportunity-radar/) | Analyzes your LinkedIn profile and finds matching job opportunities with AI-powered scoring, contact extraction, and detailed reports | ✅ Live |
 
 ## Quick Start
 
