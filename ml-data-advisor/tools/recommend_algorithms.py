@@ -186,7 +186,7 @@ ALGORITHM_CATALOG = {
         "tasks": ["clustering"],
         "strengths": ["Simple and fast", "Scales well", "Easy to interpret cluster centroids"],
         "weaknesses": ["Must specify K upfront", "Assumes spherical clusters", "Sensitive to initialization and outliers"],
-        "min_rows": 50,
+        "min_rows": 3,
         "max_cols_ideal": 500,
         "handles_missing": False,
         "handles_categorical": False,
@@ -201,7 +201,7 @@ ALGORITHM_CATALOG = {
         "tasks": ["clustering", "anomaly_detection"],
         "strengths": ["No need to specify K", "Finds arbitrary-shaped clusters", "Identifies outliers as noise"],
         "weaknesses": ["Sensitive to eps and min_samples", "Struggles with varying density", "Not great for high dimensions"],
-        "min_rows": 50,
+        "min_rows": 5,
         "max_cols_ideal": 100,
         "handles_missing": False,
         "handles_categorical": False,
@@ -311,8 +311,13 @@ def _score_algorithm(algo: dict, profile: dict, problem: dict) -> dict:
             score += 5
             reasons.append(f"Sufficient data ({n_rows} rows >= {algo['min_rows']} minimum)")
     else:
-        score -= 30
-        reasons.append(f"Insufficient data ({n_rows} rows < {algo['min_rows']} minimum)")
+        shortfall = algo["min_rows"] / max(n_rows, 1)
+        if shortfall > 10:
+            score -= 30
+            reasons.append(f"Insufficient data ({n_rows} rows < {algo['min_rows']} minimum)")
+        else:
+            score -= 15
+            reasons.append(f"Limited data ({n_rows} rows, ideally {algo['min_rows']}+) — use with caution")
 
     if n_cols <= algo["max_cols_ideal"]:
         score += 5
@@ -364,7 +369,7 @@ def _score_algorithm(algo: dict, profile: dict, problem: dict) -> dict:
     return {
         "score": score,
         "reasons": reasons,
-        "selected": score >= 40,
+        "selected": score >= 30,
     }
 
 

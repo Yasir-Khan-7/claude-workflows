@@ -42,7 +42,13 @@ def _detect_column_type(series: pd.Series) -> str:
         unique_vals = series.dropna().unique()
         if len(unique_vals) <= 2 and set(unique_vals).issubset({0, 1, 0.0, 1.0, True, False}):
             return "binary"
-        if pd.api.types.is_integer_dtype(series) and len(unique_vals) < 20:
+        n_unique = len(unique_vals)
+        n_rows = len(series.dropna())
+        if pd.api.types.is_integer_dtype(series) and n_unique < 20:
+            unique_ratio = n_unique / max(n_rows, 1)
+            vals_range = unique_vals.max() - unique_vals.min() if n_unique > 1 else 0
+            if unique_ratio > 0.5 and vals_range > 100:
+                return "numeric"
             return "categorical_numeric"
         return "numeric"
 

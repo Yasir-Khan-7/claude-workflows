@@ -6,291 +6,417 @@
     <title>ML Data Advisor</title>
     <style>
         :root {
-            --bg: #0a0a0f;
-            --surface: #12121a;
-            --surface-2: #1a1a26;
-            --border: #2a2a3a;
-            --border-focus: #6366f1;
-            --text: #e4e4ec;
-            --text-muted: #8888a0;
+            --bg: #07070e;
+            --surface: rgba(18, 18, 30, 0.8);
+            --surface-solid: #12121e;
+            --surface-2: #1a1a2e;
+            --surface-3: #22223a;
+            --border: rgba(99, 102, 241, 0.12);
+            --border-hover: rgba(99, 102, 241, 0.3);
+            --text: #e8e8f0;
+            --text-muted: #7a7a98;
             --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.4);
             --accent-hover: #818cf8;
             --green: #22c55e;
-            --green-bg: rgba(34, 197, 94, 0.1);
+            --green-bg: rgba(34, 197, 94, 0.08);
             --amber: #f59e0b;
-            --amber-bg: rgba(245, 158, 11, 0.1);
+            --amber-bg: rgba(245, 158, 11, 0.08);
             --red: #ef4444;
-            --red-bg: rgba(239, 68, 68, 0.1);
             --blue: #3b82f6;
-            --blue-bg: rgba(59, 130, 246, 0.1);
+            --purple: #a855f7;
+            --gradient-1: linear-gradient(135deg, #6366f1, #a855f7);
+            --gradient-2: linear-gradient(135deg, #3b82f6, #6366f1);
+            --gradient-glass: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.04));
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        .bg-grid {
+            position: fixed; inset: 0; z-index: -1;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+        .bg-glow {
+            position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 600px; z-index: -1;
+            background: radial-gradient(ellipse, rgba(99,102,241,0.08), transparent 70%);
+            pointer-events: none;
+        }
+
+        .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
         header {
             border-bottom: 1px solid var(--border);
-            padding: 20px 0;
+            padding: 16px 0;
+            backdrop-filter: blur(20px);
+            background: rgba(7,7,14,0.8);
+            position: sticky; top: 0; z-index: 100;
         }
         header .container { display: flex; align-items: center; justify-content: space-between; }
         .logo { display: flex; align-items: center; gap: 12px; }
         .logo-icon {
-            width: 36px; height: 36px; background: var(--accent); border-radius: 10px;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
+            width: 38px; height: 38px;
+            background: var(--gradient-1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; color: #fff;
+            box-shadow: 0 0 20px var(--accent-glow);
+            animation: pulse-glow 3s ease-in-out infinite;
         }
-        .logo h1 { font-size: 20px; font-weight: 600; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+            50% { box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(99,102,241,0.15); }
+        }
+        .logo h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; }
         .logo span { color: var(--text-muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
-
         .badge {
-            font-size: 11px; padding: 4px 10px; border-radius: 20px;
+            font-size: 11px; padding: 4px 12px; border-radius: 20px;
             background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
         }
+        .mode-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 11px; padding: 4px 12px; border-radius: 8px;
+            font-weight: 700; letter-spacing: 0.5px;
+        }
+        .mode-agent { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
 
-        main { padding: 40px 0 80px; }
+        main { padding: 48px 0 100px; }
 
+        /* Upload Section */
         .upload-section {
-            background: var(--surface);
+            background: var(--gradient-glass);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 40px;
+            border-radius: 20px;
+            padding: 44px;
+            animation: fadeSlideUp 0.6s ease-out;
         }
 
-        .section-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
-        .section-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 24px;
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .form-grid.full { grid-template-columns: 1fr; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.3px; }
+        .section-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
 
         .field label {
-            display: block; font-size: 13px; font-weight: 500;
-            margin-bottom: 6px; color: var(--text-muted);
+            display: block; font-size: 12px; font-weight: 600;
+            margin-bottom: 6px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .field input, .field select {
-            width: 100%; padding: 10px 14px; background: var(--surface-2);
-            border: 1px solid var(--border); border-radius: 10px;
-            color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s;
+        .field input {
+            width: 100%; padding: 12px 16px; background: rgba(26,26,46,0.6);
+            border: 1px solid var(--border); border-radius: 12px;
+            color: var(--text); font-size: 14px; outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
-        .field input:focus { border-color: var(--border-focus); }
-        .field input::placeholder { color: var(--text-muted); opacity: 0.6; }
-        .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .field input::placeholder { color: var(--text-muted); opacity: 0.5; }
+        .field .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+        .field .hint a { color: var(--accent); text-decoration: none; }
+        .field .hint a:hover { text-decoration: underline; }
 
         .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 40px 20px;
+            border: 2px dashed rgba(99,102,241,0.25);
+            border-radius: 16px;
+            padding: 48px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            margin-bottom: 28px;
+            background: rgba(99,102,241,0.02);
         }
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--accent);
-            background: rgba(99, 102, 241, 0.05);
-        }
-        .drop-zone.has-file {
-            border-color: var(--green);
-            background: var(--green-bg);
-        }
-        .drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+        .drop-zone:hover { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+        .drop-zone.dragover { border-color: var(--accent); background: rgba(99,102,241,0.08); transform: scale(1.01); }
+        .drop-zone.has-file { border-color: var(--green); background: var(--green-bg); border-style: solid; }
+        .drop-zone-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.8; }
         .drop-zone-text { font-size: 14px; color: var(--text-muted); }
         .drop-zone-text strong { color: var(--accent); }
-        .drop-zone .file-name {
-            font-size: 14px; font-weight: 600; color: var(--green); margin-top: 4px;
-        }
+        .drop-zone .file-name { font-size: 14px; font-weight: 600; color: var(--green); margin-top: 6px; }
 
         .btn {
             display: inline-flex; align-items: center; gap: 8px;
-            padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600;
-            cursor: pointer; border: none; transition: all 0.2s;
+            padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 700;
+            cursor: pointer; border: none; transition: all 0.3s ease;
+            letter-spacing: 0.3px;
         }
         .btn-primary {
-            background: var(--accent); color: #fff; width: 100%;
+            background: var(--gradient-1); color: #fff; width: 100%;
             justify-content: center;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.3);
         }
-        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 6px 30px rgba(99,102,241,0.5);
+            transform: translateY(-2px);
+        }
+        .btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
         .spinner {
-            width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+            width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.3);
             border-top-color: #fff; border-radius: 50%;
-            animation: spin 0.8s linear infinite; display: none;
+            animation: spin 0.7s linear infinite; display: none;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        .loading-bar {
+            height: 3px; background: var(--surface-2); border-radius: 2px;
+            margin-top: 16px; overflow: hidden; display: none;
+        }
+        .loading-bar-fill {
+            height: 100%; width: 0%; border-radius: 2px;
+            background: var(--gradient-1);
+            animation: loading-progress 2s ease-in-out infinite;
+        }
+        @keyframes loading-progress {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 60%; margin-left: 20%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+
         /* Results */
-        .results { margin-top: 32px; display: none; }
+        .results { margin-top: 40px; display: none; }
 
         .result-header {
             display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+            margin-bottom: 24px; animation: fadeSlideUp 0.4s ease-out;
         }
-        .result-header h2 { font-size: 20px; font-weight: 600; }
-        .elapsed { font-size: 13px; color: var(--text-muted); }
+        .result-header h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+        .elapsed {
+            font-size: 12px; color: var(--text-muted); background: var(--surface-2);
+            padding: 5px 12px; border-radius: 8px;
+        }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
             margin-bottom: 24px;
         }
         .stat-card {
-            background: var(--surface);
+            background: var(--gradient-glass);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 20px;
+            border-radius: 14px;
+            padding: 18px 20px;
+            transition: all 0.3s ease;
+            animation: scaleIn 0.5s ease-out both;
         }
-        .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
-        .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        .stat-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+        .stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .stat-value { font-size: 26px; font-weight: 800; margin-top: 6px; letter-spacing: -0.5px; }
+        .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
 
         .card {
-            background: var(--surface);
+            background: var(--gradient-glass);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 24px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            animation: fadeSlideUp 0.5s ease-out both;
+            transition: border-color 0.3s;
         }
+        .card:hover { border-color: var(--border-hover); }
         .card-title {
-            font-size: 15px; font-weight: 600; margin-bottom: 12px;
+            font-size: 14px; font-weight: 700; margin-bottom: 16px;
             display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
 
         .approach-badge {
-            display: inline-block; padding: 6px 16px; border-radius: 8px;
-            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+            display: inline-block; padding: 6px 18px; border-radius: 8px;
+            font-size: 13px; font-weight: 800; letter-spacing: 0.5px;
         }
-        .approach-ml { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
-        .approach-dl { background: rgba(168,85,247,0.1); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
-        .approach-ml_first { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+        .approach-ml { background: rgba(59,130,246,0.12); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+        .approach-dl { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.25); }
+        .approach-ml_first { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
 
+        /* Algo list */
         .algo-list { list-style: none; }
         .algo-item {
-            display: flex; align-items: flex-start; gap: 12px;
-            padding: 14px 0; border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; gap: 14px;
+            padding: 16px 0; border-bottom: 1px solid var(--border);
+            transition: all 0.2s;
         }
         .algo-item:last-child { border-bottom: none; }
         .algo-rank {
-            min-width: 36px; height: 36px; border-radius: 8px;
+            min-width: 40px; height: 40px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700;
+            font-size: 13px; font-weight: 800;
         }
-        .rank-1 { background: rgba(245,158,11,0.15); color: #f59e0b; }
-        .rank-2 { background: rgba(148,163,184,0.15); color: #94a3b8; }
-        .rank-3 { background: rgba(180,83,9,0.15); color: #d97706; }
-        .rank-n { background: var(--surface-2); color: var(--text-muted); }
+        .rank-1 { background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.05)); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+        .rank-2 { background: linear-gradient(135deg, rgba(148,163,184,0.2), rgba(148,163,184,0.05)); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+        .rank-3 { background: linear-gradient(135deg, rgba(180,83,9,0.2), rgba(180,83,9,0.05)); color: #d97706; border: 1px solid rgba(180,83,9,0.2); }
+        .rank-n { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
         .algo-info { flex: 1; }
-        .algo-name { font-weight: 600; font-size: 14px; }
-        .algo-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-        .algo-score {
-            font-size: 14px; font-weight: 700; min-width: 50px; text-align: right;
-        }
+        .algo-name { font-weight: 700; font-size: 14px; }
+        .algo-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+        .algo-reasons { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+        .algo-score { font-size: 15px; font-weight: 800; min-width: 50px; text-align: right; }
 
         .score-bar-bg {
-            width: 100%; height: 6px; background: var(--surface-2); border-radius: 3px;
-            margin-top: 6px; overflow: hidden;
+            width: 100%; height: 5px; background: var(--surface-2); border-radius: 3px;
+            margin-top: 8px; overflow: hidden;
         }
-        .score-bar-fill {
-            height: 100%; border-radius: 3px; transition: width 0.6s ease;
-        }
+        .score-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease-out; }
 
-        .preprocess-step {
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
+        /* Preprocessing */
+        .preprocess-step { padding: 14px 0; border-bottom: 1px solid var(--border); }
         .preprocess-step:last-child { border-bottom: none; }
+        .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
         .step-num {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 700;
-            background: var(--accent); color: #fff; margin-right: 8px;
+            width: 26px; height: 26px; border-radius: 8px; font-size: 12px; font-weight: 800;
+            background: var(--gradient-1); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.3);
         }
-        .step-reason { color: var(--text-muted); font-size: 12px; margin-top: 2px; margin-left: 30px; }
-
-        .quality-bar-container {
-            display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
-        }
-        .quality-label { font-size: 13px; min-width: 110px; color: var(--text-muted); }
-        .quality-bar {
-            flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden;
-        }
-        .quality-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-        .quality-val { font-size: 13px; font-weight: 600; min-width: 44px; text-align: right; }
-
-        .groq-section { margin-top: 16px; }
-        .groq-content {
-            font-size: 14px; line-height: 1.7; white-space: pre-wrap;
-            color: var(--text);
-        }
-        .groq-content strong { color: var(--accent); }
-        .groq-error { color: var(--amber); font-size: 13px; }
-        .groq-badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 11px; color: var(--text-muted); background: var(--surface-2);
-            padding: 3px 8px; border-radius: 6px; margin-left: 8px;
+        .step-name { font-weight: 700; font-size: 14px; }
+        .step-reason { color: var(--text-muted); font-size: 12px; margin-left: 36px; margin-bottom: 8px; }
+        .step-approaches { margin-left: 36px; font-size: 13px; color: var(--text-muted); }
+        .step-approaches div { margin-bottom: 3px; }
+        .step-tools { margin-left: 36px; margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .step-tools code {
+            font-size: 11px; background: var(--surface-2); padding: 3px 10px;
+            border-radius: 6px; color: var(--accent); border: 1px solid var(--border);
         }
 
-        .error-box {
-            background: var(--red-bg); border: 1px solid rgba(239,68,68,0.3);
-            border-radius: 10px; padding: 16px 20px; color: var(--red);
-            font-size: 14px; margin-top: 16px; display: none;
-        }
+        /* Quality bars */
+        .quality-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .quality-label { font-size: 12px; min-width: 120px; color: var(--text-muted); text-transform: capitalize; }
+        .quality-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+        .quality-fill { height: 100%; border-radius: 4px; transition: width 1.2s ease-out; }
+        .quality-val { font-size: 12px; font-weight: 700; min-width: 50px; text-align: right; }
 
+        /* Tabs */
         .tabs {
-            display: flex; gap: 4px; margin-bottom: 20px;
-            background: var(--surface-2); border-radius: 10px; padding: 4px;
+            display: flex; gap: 4px; margin-bottom: 20px; padding: 4px;
+            background: var(--surface-solid); border-radius: 12px; border: 1px solid var(--border);
         }
         .tab {
-            flex: 1; padding: 8px 16px; text-align: center; border-radius: 8px;
-            font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+            flex: 1; padding: 10px 12px; text-align: center; border-radius: 9px;
+            font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s;
             color: var(--text-muted); border: none; background: none;
+            letter-spacing: 0.3px;
         }
-        .tab.active { background: var(--accent); color: #fff; }
-        .tab:hover:not(.active) { color: var(--text); }
-
+        .tab.active { background: var(--gradient-1); color: #fff; box-shadow: 0 2px 12px rgba(99,102,241,0.3); }
+        .tab:hover:not(.active) { color: var(--text); background: rgba(99,102,241,0.08); }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
 
+        /* AI Insights */
+        .groq-content { font-size: 14px; line-height: 1.8; color: var(--text); }
+        .groq-content h3 { color: var(--accent); font-size: 14px; margin: 18px 0 6px; font-weight: 700; }
+        .groq-content h3:first-child { margin-top: 0; }
+        .groq-content p { margin-bottom: 10px; }
+        .groq-content ul { margin: 6px 0 10px 20px; }
+        .groq-content li { margin-bottom: 4px; }
+        .groq-content strong { color: var(--accent); font-weight: 700; }
+        .groq-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; color: var(--text-muted); background: var(--surface-2);
+            padding: 3px 10px; border-radius: 6px; margin-left: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* Empty states */
+        .empty-state {
+            text-align: center; padding: 40px 20px; color: var(--text-muted);
+        }
+        .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+        .empty-desc { font-size: 13px; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+        /* Report */
         .report-preview {
-            background: var(--surface-2); border-radius: 10px; padding: 24px;
+            background: var(--surface-solid); border-radius: 12px; padding: 28px;
             max-height: 600px; overflow-y: auto; font-size: 13px;
-            line-height: 1.7; white-space: pre-wrap; font-family: 'SF Mono', 'Fira Code', monospace;
+            line-height: 1.7; white-space: pre-wrap;
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            border: 1px solid var(--border);
         }
 
         .imbalance-warn {
-            background: var(--amber-bg); border: 1px solid rgba(245,158,11,0.3);
-            border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--amber);
-            margin-top: 8px;
+            background: var(--amber-bg); border: 1px solid rgba(245,158,11,0.2);
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--amber);
+            margin-top: 10px; display: flex; align-items: flex-start; gap: 8px;
         }
 
-        @media (max-width: 640px) {
+        .error-box {
+            background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 12px; padding: 16px 20px; color: var(--red);
+            font-size: 14px; margin-top: 16px; display: none;
+        }
+
+        .tag {
+            display: inline-block; padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 600;
+            background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+        }
+
+        .code-block {
+            background: #0d0d1a; border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; margin-top: 8px; font-size: 12px;
+            font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+            color: var(--green); white-space: pre-wrap; line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .insight-section { margin-bottom: 20px; }
+        .insight-section h4 {
+            font-size: 13px; font-weight: 700; color: var(--accent);
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .insight-section p { font-size: 13px; line-height: 1.7; color: var(--text); }
+        .insight-section ul { margin: 6px 0 0 18px; font-size: 13px; color: var(--text); }
+        .insight-section li { margin-bottom: 4px; line-height: 1.6; }
+
+        @media (max-width: 700px) {
             .form-grid { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .upload-section { padding: 24px; }
+            .tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
     <header>
         <div class="container">
             <div class="logo">
-                <div class="logo-icon">&#x2699;</div>
+                <div class="logo-icon">DA</div>
                 <h1>ML Data Advisor <span>by WAT Framework</span></h1>
             </div>
-            <div class="badge">v1.0</div>
+            <div class="badge">v2.0 &middot; Agentic</div>
         </div>
     </header>
 
@@ -299,15 +425,16 @@
             <div class="upload-section">
                 <div class="section-title">Analyze Your Dataset</div>
                 <div class="section-desc">
-                    Upload a dataset to get algorithm recommendations, preprocessing guidance, and a full training plan.
-                    Optionally add a Groq API key for AI-powered deep analysis.
+                    Upload a dataset and the AI agent will reason about your data, recommend algorithms, 
+                    generate preprocessing pipelines, and produce a full training plan.
+                    <strong>A Groq API key is required</strong> — the agent needs an LLM to analyze your data.
                 </div>
 
                 <div class="drop-zone" id="dropZone">
-                    <div class="drop-zone-icon">&#128206;</div>
-                    <div class="drop-zone-text">
+                    <div class="drop-zone-icon" id="dropIcon">&#128206;</div>
+                    <div class="drop-zone-text" id="dropText">
                         Drag & drop your dataset here or <strong>click to browse</strong>
-                        <br>CSV, JSON, Parquet, Excel
+                        <br><span style="font-size:12px;opacity:0.6">CSV, JSON, Parquet, Excel</span>
                     </div>
                     <div class="file-name" id="fileName" style="display:none"></div>
                 </div>
@@ -315,14 +442,14 @@
 
                 <div class="form-grid">
                     <div class="field">
-                        <label>Target Column (optional)</label>
+                        <label>Target Column</label>
                         <input type="text" id="targetCol" placeholder="e.g. price, default, sentiment">
                         <div class="hint">Leave empty for unsupervised analysis (clustering)</div>
                     </div>
                     <div class="field">
-                        <label>Groq API Key (optional)</label>
-                        <input type="password" id="groqKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
-                        <div class="hint">Enables AI-powered deep analysis. <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get a free key</a></div>
+                        <label>Groq API Key <span style="color:var(--red)">*</span></label>
+                        <input type="password" id="groqKey" placeholder="gsk_xxxxxxxxxxxxxxxx" required>
+                        <div class="hint">Required for AI agent analysis &mdash; <a href="https://console.groq.com/keys" target="_blank">Get a free key</a></div>
                     </div>
                 </div>
 
@@ -330,6 +457,7 @@
                     <span class="spinner" id="spinner"></span>
                     <span id="btnText">Upload a dataset to start</span>
                 </button>
+                <div class="loading-bar" id="loadingBar"><div class="loading-bar-fill"></div></div>
 
                 <div class="error-box" id="errorBox"></div>
             </div>
@@ -342,11 +470,11 @@
 
                 <div class="stats-grid" id="statsGrid"></div>
 
-                <div class="tabs">
+                <div class="tabs" id="tabsContainer">
                     <button class="tab active" data-tab="overview">Overview</button>
                     <button class="tab" data-tab="algorithms">Algorithms</button>
                     <button class="tab" data-tab="preprocessing">Preprocessing</button>
-                    <button class="tab" data-tab="groq">AI Insights</button>
+                    <button class="tab" data-tab="groq">AI Agent</button>
                     <button class="tab" data-tab="report">Full Report</button>
                 </div>
 
@@ -360,240 +488,246 @@
     </main>
 
 <script>
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-const fileName = document.getElementById('fileName');
-const analyzeBtn = document.getElementById('analyzeBtn');
-const btnText = document.getElementById('btnText');
-const spinner = document.getElementById('spinner');
-const errorBox = document.getElementById('errorBox');
-const resultsEl = document.getElementById('results');
+const $ = id => document.getElementById(id);
+const dropZone = $('dropZone'), fileInput = $('fileInput'), fileName = $('fileName');
+const analyzeBtn = $('analyzeBtn'), btnText = $('btnText'), spinner = $('spinner');
+const errorBox = $('errorBox'), resultsEl = $('results'), loadingBar = $('loadingBar');
 
 let selectedFile = null;
 
 dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
-});
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]); });
 fileInput.addEventListener('change', () => { if (fileInput.files.length) setFile(fileInput.files[0]); });
 
 function setFile(file) {
     selectedFile = file;
     dropZone.classList.add('has-file');
-    fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    fileName.textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
     fileName.style.display = 'block';
-    dropZone.querySelector('.drop-zone-text').style.display = 'none';
-    dropZone.querySelector('.drop-zone-icon').textContent = '\u2705';
-    analyzeBtn.disabled = false;
-    btnText.textContent = 'Analyze Dataset';
+    $('dropText').style.display = 'none';
+    $('dropIcon').textContent = '\u2705';
+    updateButtonState();
 }
+
+function updateButtonState() {
+    const hasFile = selectedFile !== null;
+    const hasKey = $('groqKey').value.trim().length > 0;
+    analyzeBtn.disabled = !(hasFile && hasKey);
+    if (!hasFile) btnText.textContent = 'Upload a dataset to start';
+    else if (!hasKey) btnText.textContent = 'Enter API key to analyze';
+    else btnText.textContent = 'Analyze Dataset';
+}
+
+$('groqKey').addEventListener('input', updateButtonState);
 
 analyzeBtn.addEventListener('click', analyze);
 
 async function analyze() {
     if (!selectedFile) return;
-
     analyzeBtn.disabled = true;
     btnText.textContent = 'Analyzing...';
     spinner.style.display = 'block';
+    loadingBar.style.display = 'block';
     errorBox.style.display = 'none';
     resultsEl.style.display = 'none';
 
     const form = new FormData();
     form.append('file', selectedFile);
-    form.append('target', document.getElementById('targetCol').value);
-    form.append('groq_key', document.getElementById('groqKey').value);
+    form.append('target', $('targetCol').value);
+    form.append('groq_key', $('groqKey').value);
 
     try {
         const resp = await fetch('/api/analyze', { method: 'POST', body: form });
         const data = await resp.json();
-
-        if (data.error) {
-            showError(data.error);
-            return;
-        }
-
+        if (data.error) { showError(data.error); return; }
         renderResults(data);
     } catch (e) {
         showError('Request failed. Is the server running?');
     } finally {
         analyzeBtn.disabled = false;
-        btnText.textContent = 'Analyze Dataset';
+        btnText.textContent = 'Re-analyze';
         spinner.style.display = 'none';
+        loadingBar.style.display = 'none';
     }
 }
 
-function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = 'block';
+function showError(msg) { errorBox.textContent = msg; errorBox.style.display = 'block'; }
+
+function scoreColor(s) { return s >= 80 ? 'var(--green)' : s >= 55 ? 'var(--amber)' : 'var(--red)'; }
+
+function renderMarkdown(text) {
+    return text
+        .replace(/\*\*(.+?)\*\*:?/g, '<strong>$1</strong>')
+        .replace(/^\* (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+        .replace(/<\/ul>\s*<ul>/g, '')
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .replace(/^/, '<p>').replace(/$/, '</p>');
 }
 
 function renderResults(data) {
-    const { profile, recommendations, report_markdown, groq_insights, elapsed_seconds } = data;
-    const problem = recommendations.problem_type;
-    const approach = recommendations.recommended_approach;
-    const target = profile.target_analysis || {};
-    const quality = profile.quality_score || {};
+    const { profile: p, recommendations: r, report_markdown, deep_analysis, elapsed_seconds, model } = data;
+    const problem = r.problem_type, approach = r.recommended_approach;
+    const target = p.target_analysis || {}, quality = p.quality_score || {};
+    const algos = r.recommendations || [];
 
-    document.getElementById('elapsed').textContent = `Completed in ${elapsed_seconds}s`;
+    const modelName = model || 'AI Agent';
+    $('elapsed').innerHTML = `<span class="mode-badge mode-agent">AI Agent</span> ${elapsed_seconds}s &middot; ${modelName}`;
 
-    // Stats cards
-    const approachClass = approach.approach === 'dl' ? 'approach-dl' : approach.approach === 'ml_first' ? 'approach-ml_first' : 'approach-ml';
-    document.getElementById('statsGrid').innerHTML = `
+    const ac = approach.approach === 'dl' ? 'approach-dl' : approach.approach === 'ml_first' ? 'approach-ml_first' : 'approach-ml';
+    $('statsGrid').innerHTML = `
         <div class="stat-card">
-            <div class="stat-label">Rows</div>
-            <div class="stat-value">${profile.shape.rows.toLocaleString()}</div>
-            <div class="stat-sub">${profile.shape.columns} columns</div>
+            <div class="stat-label">Dataset</div>
+            <div class="stat-value">${p.shape.rows.toLocaleString()}</div>
+            <div class="stat-sub">${p.shape.columns} columns &middot; ${p.file_size_mb || 0} MB</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Problem Type</div>
-            <div class="stat-value" style="font-size:16px">${(problem.problem_type || 'unknown').replace(/_/g, ' ')}</div>
-            <div class="stat-sub">Confidence: ${problem.confidence || 'N/A'}</div>
+            <div class="stat-value" style="font-size:17px;margin-top:10px">${(problem.problem_type||'unknown').replace(/_/g,' ')}</div>
+            <div class="stat-sub">Confidence: ${problem.confidence||'N/A'}${problem.reasoning ? '<br>'+problem.reasoning : ''}</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Approach</div>
-            <div class="stat-value"><span class="approach-badge ${approachClass}">${approach.approach.replace('_', ' ').toUpperCase()}</span></div>
-            <div class="stat-sub" style="margin-top:6px">${approach.reason}</div>
+            <div class="stat-value" style="margin-top:8px"><span class="approach-badge ${ac}">${approach.approach.replace(/_/g,' ').toUpperCase()}</span></div>
+            <div class="stat-sub" style="margin-top:8px">${approach.reason}</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Quality Score</div>
-            <div class="stat-value">${quality.overall || 0}<span style="font-size:14px;color:var(--text-muted)">/100</span></div>
-            <div class="stat-sub">${quality.completeness || 0}% complete</div>
-        </div>
-    `;
-
-    // Overview tab
-    let overviewHtml = `<div class="card"><div class="card-title">Data Quality</div>`;
-    for (const [key, val] of Object.entries(quality)) {
-        if (key === 'overall') continue;
-        const color = val >= 90 ? 'var(--green)' : val >= 70 ? 'var(--amber)' : 'var(--red)';
-        overviewHtml += `
-            <div class="quality-bar-container">
-                <span class="quality-label">${key.replace(/_/g, ' ')}</span>
-                <div class="quality-bar"><div class="quality-fill" style="width:${val}%;background:${color}"></div></div>
-                <span class="quality-val">${val}%</span>
-            </div>`;
-    }
-    overviewHtml += `</div>`;
-
-    if (target.column) {
-        overviewHtml += `<div class="card"><div class="card-title">Target: <code>${target.column}</code></div>
-            <div style="font-size:14px;color:var(--text-muted)">
-                Type: <strong style="color:var(--text)">${(target.problem_type || '').replace(/_/g, ' ')}</strong>
-                &nbsp;&middot;&nbsp; Unique values: ${target.unique_values || 'N/A'}
-                &nbsp;&middot;&nbsp; Missing: ${target.missing_pct || 0}%
-            </div>`;
-        if (target.class_distribution) {
-            overviewHtml += `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
-            for (const [cls, count] of Object.entries(target.class_distribution)) {
-                overviewHtml += `<span style="background:var(--surface-2);padding:6px 12px;border-radius:8px;font-size:13px">
-                    <strong>${cls}</strong>: ${count.toLocaleString()}</span>`;
-            }
-            overviewHtml += `</div>`;
-        }
-        if (target.is_imbalanced === true || target.is_imbalanced === 'True') {
-            overviewHtml += `<div class="imbalance-warn">Class imbalance detected (${target.imbalance_ratio}:1 ratio). Consider SMOTE, class weights, or focal loss.</div>`;
-        }
-        overviewHtml += `</div>`;
-    }
-
-    overviewHtml += `<div class="card"><div class="card-title">Column Types</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">`;
-    for (const [type, count] of Object.entries(profile.type_summary || {})) {
-        overviewHtml += `<span style="background:var(--surface-2);padding:6px 14px;border-radius:8px;font-size:13px">
-            ${type.replace(/_/g, ' ')}: <strong>${count}</strong></span>`;
-    }
-    overviewHtml += `</div></div>`;
-    document.getElementById('tab-overview').innerHTML = overviewHtml;
-
-    // Algorithms tab
-    const algos = recommendations.recommendations || [];
-    let algoHtml = `<div class="card"><div class="card-title">Ranked Recommendations (${algos.length} algorithms)</div><ul class="algo-list">`;
-    algos.forEach((a, i) => {
-        const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
-        const scoreColor = a.suitability_score >= 80 ? 'var(--green)' : a.suitability_score >= 60 ? 'var(--amber)' : 'var(--red)';
-        algoHtml += `
-            <li class="algo-item">
-                <div class="algo-rank ${rankClass}">#${i+1}</div>
-                <div class="algo-info">
-                    <div class="algo-name">${a.name}</div>
-                    <div class="algo-meta">${a.family.replace(/_/g, ' ')} &middot; ${a.interpretable ? 'Interpretable' : 'Black box'} &middot; Scaling: ${a.needs_scaling ? 'Required' : 'Not needed'}</div>
-                    <div class="algo-meta" style="margin-top:4px">${(a.reasons || []).slice(0, 2).join(' &middot; ')}</div>
-                    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${a.suitability_score}%;background:${scoreColor}"></div></div>
-                </div>
-                <div class="algo-score" style="color:${scoreColor}">${a.suitability_score}</div>
-            </li>`;
-    });
-    algoHtml += `</ul></div>`;
-
-    const evalStrat = recommendations.evaluation_strategy || {};
-    algoHtml += `<div class="card"><div class="card-title">Evaluation Strategy</div>
-        <div style="font-size:14px">
-            <strong>Primary Metric:</strong> ${evalStrat.primary_metric || 'TBD'}<br>
-            <strong>Validation:</strong> ${evalStrat.validation_strategy || 'TBD'}<br>
-            <strong>All Metrics:</strong> ${(evalStrat.metrics || []).join(', ')}
-        </div></div>`;
-    document.getElementById('tab-algorithms').innerHTML = algoHtml;
-
-    // Preprocessing tab
-    const steps = recommendations.preprocessing_steps || [];
-    let prepHtml = `<div class="card"><div class="card-title">Preprocessing Pipeline (${steps.length} steps)</div>`;
-    steps.forEach((s, i) => {
-        prepHtml += `
-            <div class="preprocess-step">
-                <span class="step-num">${i+1}</span><strong>${s.step}</strong>
-                <div class="step-reason">${s.reason}</div>
-                <div style="margin-left:30px;margin-top:6px;font-size:13px;color:var(--text-muted)">
-                    ${(s.approaches || []).map(a => `<div style="margin-bottom:2px">&bull; ${a}</div>`).join('')}
-                </div>
-                <div style="margin-left:30px;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
-                    ${(s.tools || []).map(t => `<code style="font-size:11px;background:var(--surface-2);padding:2px 8px;border-radius:4px">${t}</code>`).join('')}
-                </div>
-            </div>`;
-    });
-    prepHtml += `</div>`;
-    document.getElementById('tab-preprocessing').innerHTML = prepHtml;
-
-    // Groq tab
-    let groqHtml = '';
-    if (groq_insights && groq_insights.status === 'success' && groq_insights.analysis) {
-        groqHtml = `<div class="card groq-section">
-            <div class="card-title">AI Deep Analysis <span class="groq-badge">Powered by ${groq_insights.model}</span></div>
-            <div class="groq-content">${escapeHtml(groq_insights.analysis)}</div></div>`;
-    } else if (groq_insights && groq_insights.status === 'error') {
-        groqHtml = `<div class="card"><div class="card-title">AI Deep Analysis</div>
-            <div class="groq-error">${groq_insights.message}</div></div>`;
-    } else {
-        groqHtml = `<div class="card"><div class="card-title">AI Deep Analysis</div>
-            <div style="color:var(--text-muted);font-size:14px">
-                Enter a Groq API key above and re-analyze to get AI-powered insights.<br>
-                <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get a free Groq API key &rarr;</a>
-            </div></div>`;
-    }
-    document.getElementById('tab-groq').innerHTML = groqHtml;
-
-    // Report tab
-    document.getElementById('tab-report').innerHTML = `
-        <div class="card">
-            <div class="card-title">Full Training Plan Report</div>
-            <div class="report-preview">${escapeHtml(report_markdown)}</div>
+            <div class="stat-value" style="color:${scoreColor(quality.overall||0)}">${quality.overall||0}<span style="font-size:13px;color:var(--text-muted)">/100</span></div>
+            <div class="stat-sub">${algos.length} algorithms ranked</div>
         </div>`;
 
+    // OVERVIEW
+    let oh = `<div class="card"><div class="card-title">Data Quality</div>`;
+    for (const [k,v] of Object.entries(quality)) {
+        if (k==='overall') continue;
+        const c = v>=90?'var(--green)':v>=60?'var(--amber)':'var(--red)';
+        oh += `<div class="quality-row"><span class="quality-label">${k.replace(/_/g,' ')}</span>
+            <div class="quality-track"><div class="quality-fill" style="width:${v}%;background:${c}"></div></div>
+            <span class="quality-val" style="color:${c}">${v}%</span></div>`;
+    }
+    oh += `</div>`;
+
+    if (target.column) {
+        oh += `<div class="card"><div class="card-title">Target: <code style="background:var(--surface-2);padding:2px 8px;border-radius:4px;font-size:12px">${target.column}</code></div>
+            <div style="font-size:13px;color:var(--text-muted)">
+                Type: <strong style="color:var(--text)">${(target.problem_type||'').replace(/_/g,' ')}</strong>
+                &middot; ${target.unique_values||'N/A'} unique &middot; ${target.missing_pct||0}% missing</div>`;
+        if (target.class_distribution) {
+            oh += `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
+            for (const [c,n] of Object.entries(target.class_distribution))
+                oh += `<span class="tag"><strong>${c}</strong>: ${n.toLocaleString()}</span>`;
+            oh += `</div>`;
+        }
+        if (target.is_imbalanced===true||target.is_imbalanced==='True')
+            oh += `<div class="imbalance-warn">&#9888; Class imbalance detected (${target.imbalance_ratio}:1). SMOTE, class weights, or focal loss recommended.</div>`;
+        oh += `</div>`;
+    }
+
+    oh += `<div class="card"><div class="card-title">Column Types</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">`;
+    for (const [t,c] of Object.entries(p.type_summary||{}))
+        oh += `<span class="tag">${t.replace(/_/g,' ')}: <strong>${c}</strong></span>`;
+    oh += `</div></div>`;
+    $('tab-overview').innerHTML = oh;
+
+    // ALGORITHMS
+    let ah = '';
+    if (algos.length === 0) {
+        ah = `<div class="card"><div class="empty-state">
+            <div class="empty-icon">&#129302;</div>
+            <div class="empty-title">No strong algorithm matches</div>
+            <div class="empty-desc">Your dataset is very small (${p.shape.rows} rows). Try uploading a larger dataset, or specify a target column for supervised recommendations. For small data, consider K-Means clustering or KNN as manual starting points.</div>
+        </div></div>`;
+    } else {
+        ah = `<div class="card"><div class="card-title">Ranked Recommendations (${algos.length})</div><ul class="algo-list">`;
+        algos.forEach((a,i) => {
+            const rc = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+            const sc = scoreColor(a.suitability_score);
+            const code = a.starter_code ? `<div class="code-block">${escapeHtml(a.starter_code)}</div>` : '';
+            ah += `<li class="algo-item" style="animation:fadeSlideUp 0.4s ease-out ${0.1*(i+1)}s both">
+                <div class="algo-rank ${rc}">#${i+1}</div>
+                <div class="algo-info">
+                    <div class="algo-name">${a.name}</div>
+                    <div class="algo-meta">${(a.family||'').replace(/_/g,' ')} &middot; ${a.interpretable?'Interpretable':'Black box'} &middot; Scaling: ${a.needs_scaling?'Required':'Not needed'}</div>
+                    <div class="algo-reasons">${(a.reasons||[]).slice(0,4).join(' &middot; ')}</div>
+                    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${a.suitability_score}%;background:${sc}"></div></div>
+                    ${code}
+                </div>
+                <div class="algo-score" style="color:${sc}">${a.suitability_score}</div></li>`;
+        });
+        ah += `</ul></div>`;
+    }
+
+    const ev = r.evaluation_strategy||{};
+    ah += `<div class="card"><div class="card-title">Evaluation Strategy</div>
+        <div style="font-size:13px;display:grid;gap:8px">
+            <div><span style="color:var(--text-muted)">Primary Metric:</span> <strong>${ev.primary_metric||'TBD'}</strong></div>
+            <div><span style="color:var(--text-muted)">Validation:</span> ${ev.validation_strategy||'TBD'}</div>
+            <div><span style="color:var(--text-muted)">All Metrics:</span> ${(ev.metrics||[]).join(', ')}</div>
+        </div></div>`;
+    $('tab-algorithms').innerHTML = ah;
+
+    // PREPROCESSING
+    const steps = r.preprocessing_steps||[];
+    let ph = '';
+    if (steps.length === 0) {
+        ph = `<div class="card"><div class="empty-state">
+            <div class="empty-icon">&#9989;</div>
+            <div class="empty-title">No preprocessing needed</div>
+            <div class="empty-desc">Your data appears clean with no missing values, categorical columns, or scaling requirements detected.</div>
+        </div></div>`;
+    } else {
+        ph = `<div class="card"><div class="card-title">Preprocessing Pipeline &mdash; ${steps.length} step${steps.length>1?'s':''}</div>`;
+        steps.forEach((s,i) => {
+            ph += `<div class="preprocess-step" style="animation:fadeSlideUp 0.4s ease-out ${0.1*(i+1)}s both">
+                <div class="step-header"><span class="step-num">${i+1}</span><span class="step-name">${s.step}</span></div>
+                <div class="step-reason">${s.reason}</div>
+                <div class="step-approaches">${(s.approaches||[]).map(a=>`<div>&bull; ${a}</div>`).join('')}</div>
+                <div class="step-tools">${(s.tools||[]).map(t=>`<code>${t}</code>`).join('')}</div></div>`;
+        });
+        ph += `</div>`;
+    }
+    $('tab-preprocessing').innerHTML = ph;
+
+    // AI INSIGHTS (from LLM agent deep_analysis)
+    let gh = '';
+    const da = deep_analysis;
+    if (da && (da.quick_assessment || da.strategy)) {
+        gh = `<div class="card"><div class="card-title">AI Deep Analysis <span class="groq-badge">Powered by ${modelName}</span></div>`;
+        if (da.quick_assessment)
+            gh += `<div class="insight-section"><h4>Quick Assessment</h4><p>${da.quick_assessment}</p></div>`;
+        if (da.strategy)
+            gh += `<div class="insight-section"><h4>Strategy Recommendation</h4><p>${da.strategy}</p></div>`;
+        if (da.pitfalls && da.pitfalls.length)
+            gh += `<div class="insight-section"><h4>Common Pitfalls</h4><ul>${da.pitfalls.map(p=>`<li>${p}</li>`).join('')}</ul></div>`;
+        if (da.quick_win)
+            gh += `<div class="insight-section"><h4>Quick Win</h4><p>${da.quick_win}</p></div>`;
+        if (da.advanced_tip)
+            gh += `<div class="insight-section"><h4>Advanced Tip</h4><p>${da.advanced_tip}</p></div>`;
+        gh += `</div>`;
+    } else {
+        gh = `<div class="card"><div class="empty-state">
+            <div class="empty-icon">&#129504;</div>
+            <div class="empty-title">No deep analysis available</div>
+            <div class="empty-desc">The AI agent did not return detailed insights for this dataset. Try re-analyzing.</div>
+        </div></div>`;
+    }
+    $('tab-groq').innerHTML = gh;
+
+    // REPORT
+    $('tab-report').innerHTML = `<div class="card" style="padding:0;overflow:hidden">
+        <div class="report-preview">${escapeHtml(report_markdown)}</div></div>`;
+
     resultsEl.style.display = 'block';
-    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => resultsEl.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+function escapeHtml(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-// Tabs
 document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));

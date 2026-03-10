@@ -1,7 +1,12 @@
 # Workflow: ML/DL Data Advisor
 
 ## Objective
-Analyze a dataset provided by an AI/ML engineer, determine whether Machine Learning or Deep Learning is the best fit, recommend specific algorithms ranked by suitability, generate preprocessing guidance, and produce a comprehensive training plan — all without requiring the engineer to manually inspect the data first.
+Analyze a dataset provided by an AI/ML engineer using an **LLM-powered agent** that dynamically reasons about the data — determining whether Machine Learning or Deep Learning is the best fit, recommending specific algorithms ranked by suitability, generating preprocessing guidance, and producing a comprehensive training plan.
+
+This workflow follows the **WAT Framework** architecture:
+- **Tools** handle deterministic execution (data profiling, report generation)
+- **Agent** (LLM) handles intelligent reasoning (algorithm selection, strategy, preprocessing)
+- **Workflow** (this file) defines the SOP
 
 ## When to Use
 - When an AI engineer has a new dataset and needs to decide which approach (ML vs DL) to use
@@ -16,27 +21,29 @@ Analyze a dataset provided by an AI/ML engineer, determine whether Machine Learn
 |-------|--------|---------|
 | Dataset file | User provides | `data.csv`, `customers.parquet`, `reviews.json` |
 | Target column (optional) | User provides | `price`, `churn`, `sentiment` |
+| Groq API key (required) | User provides | `gsk_xxx...` — powers the LLM Agent |
 | File format | Auto-detected | CSV, JSON, Parquet, Excel |
 
-**No API keys required.** This workflow runs entirely offline using local Python tools.
+**API key is required.** The LLM Agent dynamically reasons about the data, producing tailored recommendations with starter code. Get a free key at https://console.groq.com/keys
 
 ## Tools Used
 
-| Tool | Purpose |
-|------|---------|
-| `tools/profile_dataset.py` | Profile the dataset: detect types, compute stats, assess quality, analyze target |
-| `tools/recommend_algorithms.py` | Score and rank 15+ algorithms against the profile; generate preprocessing advice |
-| `tools/generate_training_plan.py` | Compile everything into a structured Markdown report with code snippets |
-| `tools/run_advisor.py` | Orchestrator — runs all three steps in sequence |
+| Tool | Layer | Purpose |
+|------|-------|---------|
+| `tools/profile_dataset.py` | **Tool** (deterministic) | Profile the dataset: detect types, compute stats, assess quality, analyze target |
+| `tools/llm_advisor.py` | **Agent** (LLM-powered) | Send profile to LLM; get dynamic algorithm recommendations, preprocessing, strategy, and insights |
+| `tools/generate_training_plan.py` | **Tool** (deterministic) | Compile everything into a structured Markdown report with code snippets |
+| `tools/run_advisor.py` | **Orchestrator** | Runs all steps in sequence |
 
 ## Procedure
 
-### Step 1: Profile the Dataset
+### Step 1: Profile the Dataset (Tool — Deterministic)
 
 ```bash
 python tools/profile_dataset.py --input data.csv --target label_column --output .tmp/ml_advisor/profile.json
 ```
 
+This is a **deterministic tool** — same input always produces the same output:
 - Loads the dataset (CSV, JSON, Parquet, or Excel)
 - Detects column types: numeric, categorical, text, datetime, binary
 - Computes per-column statistics (mean, std, skew, outliers for numerics; cardinality, entropy for categoricals)
@@ -51,52 +58,33 @@ python tools/profile_dataset.py --input data.csv --target label_column --output 
 - Memory error: For very large files (>1GB), sample first: `head -n 100000 data.csv > data_sample.csv`
 - Encoding error: Try `--encoding utf-8` or `latin-1` (not yet implemented — save the file with UTF-8 encoding)
 
-### Step 2: Generate Algorithm Recommendations
+### Step 2: Generate Algorithm Recommendations (Agent — LLM-Powered)
 
-```bash
-python tools/recommend_algorithms.py --profile .tmp/ml_advisor/profile.json --output .tmp/ml_advisor/recommendations.json
+```python
+from llm_advisor import get_llm_recommendations
+recommendations = get_llm_recommendations(profile, api_key="gsk_xxx")
 ```
 
-- Reads the dataset profile from Step 1
-- Infers the problem type (from target analysis or heuristics)
-- Scores 15+ algorithms from a built-in catalog against the profile
-- Scoring considers: data size, feature types, missing values, imbalance, correlations, and problem type
-- Makes the ML vs DL decision with reasoning
-- Generates preprocessing steps (imputation, encoding, scaling, text preprocessing, imbalance handling)
-- Suggests evaluation metrics and validation strategy
-- Outputs ranked recommendations to `.tmp/ml_advisor/recommendations.json`
+The LLM Agent receives the full profile and **reasons dynamically** about:
+- Problem type classification with confidence and explanation
+- Algorithm ranking with suitability scores specific to THIS dataset
+- Why each algorithm fits or doesn't fit (not hardcoded rules)
+- Preprocessing pipeline ordered by priority
+- Evaluation strategy tailored to the problem
+- Deep analysis: quick assessment, strategy, pitfalls, quick wins, advanced tips
+- Starter code for each recommended algorithm
 
-**Decision Logic (ML vs DL):**
+**Why the Agent layer matters:** A static catalog can't reason about the interaction between features, domain context, or edge cases. The LLM agent sees the full profile and applies ML engineering expertise dynamically — the same way a senior data scientist would analyze the data before choosing an approach.
 
-| Condition | Recommendation |
-|-----------|---------------|
-| Text/NLP task | **Deep Learning** (Transformers) |
-| Image task | **Deep Learning** (CNN) |
-| Rows > 50K and features > 100 | **Deep Learning** |
-| Rows < 5K | **Classical ML** (more data-efficient) |
-| Everything else | **Start with ML**, try DL if plateaus |
-
-**If this fails:** Check that the profile JSON exists and is valid. Re-run Step 1 if needed.
-
-### Step 3: Generate Training Plan Report
+### Step 3: Generate Training Plan Report (Tool — Deterministic)
 
 ```bash
 python tools/generate_training_plan.py --profile .tmp/ml_advisor/profile.json --recommendations .tmp/ml_advisor/recommendations.json --output .tmp/ml_advisor/training_plan.md
 ```
 
-- Reads both the profile and recommendations
-- Generates a comprehensive Markdown report with:
-  - Executive summary (ML vs DL decision with reasoning)
-  - Dataset overview (shape, types, quality scores)
-  - Top 5 algorithm recommendations with scores, reasoning, hyperparameters, and libraries
-  - Starter code snippet for the #1 algorithm
-  - Preprocessing pipeline (ordered steps)
-  - Evaluation strategy (metrics, validation approach)
-  - Tool ecosystem reference (libraries for every phase)
-  - Next steps checklist
-- Outputs `.tmp/ml_advisor/training_plan.md`
-
-**If this fails:** Check that both input JSON files exist.
+- Reads both the profile and recommendations (from either agent or fallback)
+- Generates a comprehensive Markdown report
+- This is a formatting tool — it doesn't make decisions
 
 ### One-Shot: Run Full Pipeline
 
@@ -105,6 +93,19 @@ python tools/run_advisor.py --input data.csv --target label_column
 ```
 
 This runs all three steps in sequence and produces all output files.
+
+### Web Interface
+
+```bash
+cd ml-data-advisor
+uvicorn web.app:app --reload --port 8000
+```
+
+The web app at `http://localhost:8000` provides:
+- File upload with drag-and-drop
+- Target column and API key inputs
+- Interactive results dashboard with tabs (Overview, Algorithms, Preprocessing, AI Agent, Full Report)
+- Real-time analysis mode indicator (AI Agent vs Rule-Based)
 
 ## Expected Outputs
 
@@ -145,42 +146,44 @@ The recommender evaluates these algorithm families:
 | Clustering | K-Means, DBSCAN | Unsupervised segmentation, exploration |
 | Anomaly Detection | Isolation Forest, Autoencoder | Fraud detection, outlier detection |
 
-## Multi-Agent Architecture
+## WAT Architecture
 
-This workflow is designed for multi-agent orchestration in Claude Code:
+This workflow implements the WAT (Workflows, Agents, Tools) framework:
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    ORCHESTRATOR AGENT                      │
-│  Reads this workflow, decides sequence, handles errors     │
-├──────────────────────────────────────────────────────────┤
-│                                                            │
-│  ┌─────────────┐   ┌──────────────┐   ┌──────────────┐  │
-│  │   PROFILER   │──▶│  RECOMMENDER │──▶│   REPORTER   │  │
-│  │   AGENT      │   │   AGENT      │   │   AGENT      │  │
-│  │              │   │              │   │              │  │
-│  │ profile_     │   │ recommend_   │   │ generate_    │  │
-│  │ dataset.py   │   │ algorithms.py│   │ training_    │  │
-│  │              │   │              │   │ plan.py      │  │
-│  └─────────────┘   └──────────────┘   └──────────────┘  │
-│         │                  │                  │           │
-│         ▼                  ▼                  ▼           │
-│   profile.json    recommendations.json  training_plan.md │
-│                                                            │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     WORKFLOW (this file)                       │
+│  Defines the SOP, inputs, outputs, and error handling         │
+├──────────────────────────────────────────────────────────────┤
+│                                                                │
+│  ┌─────────────┐   ┌───────────────────┐   ┌──────────────┐  │
+│  │    TOOL      │   │      AGENT        │   │     TOOL     │  │
+│  │ Deterministic│──▶│   LLM-Powered     │──▶│ Deterministic│  │
+│  │              │   │                   │   │              │  │
+│  │ profile_     │   │ llm_advisor.py    │   │ generate_    │  │
+│  │ dataset.py   │   │ (Groq GPT-OSS)   │   │ training_    │  │
+│  │              │   │                   │   │ plan.py      │  │
+│  │ Extracts     │   │ Reasons about     │   │ Formats      │  │
+│  │ structured   │   │ algorithms,       │   │ results into │  │
+│  │ profile      │   │ preprocessing,    │   │ Markdown     │  │
+│  │              │   │ strategy, code    │   │ report       │  │
+│  └─────────────┘   └───────────────────┘   └──────────────┘  │
+│         │                    │                     │           │
+│         ▼                    ▼                     ▼           │
+│   profile.json      recommendations.json    training_plan.md  │
+│                                                                │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**How agents coordinate:**
-1. The **Orchestrator Agent** (Claude) reads this workflow and plans the execution
-2. The **Profiler Agent** runs `profile_dataset.py` and validates the output
-3. The **Recommender Agent** reads the profile and runs `recommend_algorithms.py`
-4. The **Reporter Agent** combines both outputs into the final training plan
-5. If any step fails, the Orchestrator reads the error, fixes it, and retries
+**How the layers work together:**
+1. **Tool** (`profile_dataset.py`) deterministically extracts structured metadata from the dataset
+2. **Agent** (`llm_advisor.py`) receives the profile and applies ML engineering reasoning via LLM
+3. **Tool** (`generate_training_plan.py`) deterministically formats the results into a readable report
 
-**For Claude Code multi-agent usage:**
-- Use `--worktree` to run parallel analyses on different datasets
-- Use Plan Mode (`Shift+Tab`) to review the approach before committing
-- Use subagents to delegate each step to a specialized worker
+**Why this separation matters (from CLAUDE.md):**
+> When AI tries to handle every step directly, accuracy drops fast. If each step is 90% accurate, you're down to 59% success after just five steps.
+
+By making profiling and formatting deterministic (100% consistent), and letting the LLM focus solely on reasoning (where it excels), the pipeline stays reliable and intelligent.
 
 ## Edge Cases
 
@@ -208,5 +211,9 @@ This workflow is designed for multi-agent orchestration in Claude Code:
 
 ## Lessons Learned
 
-<!-- Update this section as you discover quirks, limitations, or failure patterns -->
-- (none yet — this is a new workflow)
+- **v1.0:** Rule-based recommender returned 0 algorithms for small datasets (<50 rows) due to rigid `min_rows` thresholds.
+- **v1.0:** Integer columns with large ranges (e.g., price: 200K-600K) were misclassified as `categorical_numeric` on small datasets because `nunique < 20` was too simplistic.
+- **v1.0:** FastAPI couldn't serialize numpy types. Fixed with a `_sanitize()` helper that recursively converts numpy to native Python.
+- **v2.0:** The entire recommendation engine was hardcoded rules — ~600 lines of static logic. This violated the WAT principle of "probabilistic AI handles reasoning." Replaced with LLM agent that dynamically reasons about each dataset.
+- **v2.0:** Groq `openai/gpt-oss-120b` (500 tps) with `response_format: json_object` reliably returns structured recommendations. Temperature 0.3 balances consistency with creative insight.
+- **v2.0:** API key is required — no fallback to hardcoded rules. The WAT framework means AI handles reasoning; if there's no AI, there's no reasoning. Users must provide an LLM to power the agent.
