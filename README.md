@@ -24,6 +24,7 @@ See [`CLAUDE.md`](CLAUDE.md) for the full agent instructions.
 |---------|-------------|--------|
 | [**Self-Healing Repo**](self-healing-repo/) | AI-powered PR reviewer that detects bugs, security issues, lint problems, and dead code — then posts structured reviews on GitHub | ✅ Live |
 | [**AI Opportunity Radar**](ai-opportunity-radar/) | Analyzes your LinkedIn profile and finds matching job opportunities with AI-powered scoring, contact extraction, and detailed reports | ✅ Live |
+| [**ML Data Advisor**](ml-data-advisor/) | Analyzes any dataset and recommends ML vs DL, ranks 15+ algorithms by suitability, generates preprocessing pipelines and training plans with code snippets | ✅ Live |
 
 ## Quick Start
 

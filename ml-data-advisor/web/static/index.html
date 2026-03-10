@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Data Advisor</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface-2: #1a1a26;
+            --border: #2a2a3a;
+            --border-focus: #6366f1;
+            --text: #e4e4ec;
+            --text-muted: #8888a0;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.1);
+            --amber: #f59e0b;
+            --amber-bg: rgba(245, 158, 11, 0.1);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.1);
+            --blue: #3b82f6;
+            --blue-bg: rgba(59, 130, 246, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+        }
+        header .container { display: flex; align-items: center; justify-content: space-between; }
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 36px; height: 36px; background: var(--accent); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .logo h1 { font-size: 20px; font-weight: 600; }
+        .logo span { color: var(--text-muted); font-size: 13px; font-weight: 400; margin-left: 8px; }
+
+        .badge {
+            font-size: 11px; padding: 4px 10px; border-radius: 20px;
+            background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+        }
+
+        main { padding: 40px 0 80px; }
+
+        .upload-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+        }
+
+        .section-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+        .section-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .form-grid.full { grid-template-columns: 1fr; }
+
+        .field label {
+            display: block; font-size: 13px; font-weight: 500;
+            margin-bottom: 6px; color: var(--text-muted);
+        }
+        .field input, .field select {
+            width: 100%; padding: 10px 14px; background: var(--surface-2);
+            border: 1px solid var(--border); border-radius: 10px;
+            color: var(--text); font-size: 14px; outline: none; transition: border-color 0.2s;
+        }
+        .field input:focus { border-color: var(--border-focus); }
+        .field input::placeholder { color: var(--text-muted); opacity: 0.6; }
+        .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        .drop-zone.has-file {
+            border-color: var(--green);
+            background: var(--green-bg);
+        }
+        .drop-zone-icon { font-size: 32px; margin-bottom: 8px; }
+        .drop-zone-text { font-size: 14px; color: var(--text-muted); }
+        .drop-zone-text strong { color: var(--accent); }
+        .drop-zone .file-name {
+            font-size: 14px; font-weight: 600; color: var(--green); margin-top: 4px;
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; border: none; transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--accent); color: #fff; width: 100%;
+            justify-content: center;
+        }
+        .btn-primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .spinner {
+            width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin 0.8s linear infinite; display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Results */
+        .results { margin-top: 32px; display: none; }
+
+        .result-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+        }
+        .result-header h2 { font-size: 20px; font-weight: 600; }
+        .elapsed { font-size: 13px; color: var(--text-muted); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+        .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+        .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 15px; font-weight: 600; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .approach-badge {
+            display: inline-block; padding: 6px 16px; border-radius: 8px;
+            font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+        }
+        .approach-ml { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+        .approach-dl { background: rgba(168,85,247,0.1); color: #a855f7; border: 1px solid rgba(168,85,247,0.3); }
+        .approach-ml_first { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+
+        .algo-list { list-style: none; }
+        .algo-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+        }
+        .algo-item:last-child { border-bottom: none; }
+        .algo-rank {
+            min-width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+        }
+        .rank-1 { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .rank-2 { background: rgba(148,163,184,0.15); color: #94a3b8; }
+        .rank-3 { background: rgba(180,83,9,0.15); color: #d97706; }
+        .rank-n { background: var(--surface-2); color: var(--text-muted); }
+        .algo-info { flex: 1; }
+        .algo-name { font-weight: 600; font-size: 14px; }
+        .algo-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .algo-score {
+            font-size: 14px; font-weight: 700; min-width: 50px; text-align: right;
+        }
+
+        .score-bar-bg {
+            width: 100%; height: 6px; background: var(--surface-2); border-radius: 3px;
+            margin-top: 6px; overflow: hidden;
+        }
+        .score-bar-fill {
+            height: 100%; border-radius: 3px; transition: width 0.6s ease;
+        }
+
+        .preprocess-step {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .preprocess-step:last-child { border-bottom: none; }
+        .step-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; border-radius: 6px; font-size: 11px; font-weight: 700;
+            background: var(--accent); color: #fff; margin-right: 8px;
+        }
+        .step-reason { color: var(--text-muted); font-size: 12px; margin-top: 2px; margin-left: 30px; }
+
+        .quality-bar-container {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+        }
+        .quality-label { font-size: 13px; min-width: 110px; color: var(--text-muted); }
+        .quality-bar {
+            flex: 1; height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden;
+        }
+        .quality-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+        .quality-val { font-size: 13px; font-weight: 600; min-width: 44px; text-align: right; }
+
+        .groq-section { margin-top: 16px; }
+        .groq-content {
+            font-size: 14px; line-height: 1.7; white-space: pre-wrap;
+            color: var(--text);
+        }
+        .groq-content strong { color: var(--accent); }
+        .groq-error { color: var(--amber); font-size: 13px; }
+        .groq-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; color: var(--text-muted); background: var(--surface-2);
+            padding: 3px 8px; border-radius: 6px; margin-left: 8px;
+        }
+
+        .error-box {
+            background: var(--red-bg); border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 10px; padding: 16px 20px; color: var(--red);
+            font-size: 14px; margin-top: 16px; display: none;
+        }
+
+        .tabs {
+            display: flex; gap: 4px; margin-bottom: 20px;
+            background: var(--surface-2); border-radius: 10px; padding: 4px;
+        }
+        .tab {
+            flex: 1; padding: 8px 16px; text-align: center; border-radius: 8px;
+            font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+            color: var(--text-muted); border: none; background: none;
+        }
+        .tab.active { background: var(--accent); color: #fff; }
+        .tab:hover:not(.active) { color: var(--text); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .report-preview {
+            background: var(--surface-2); border-radius: 10px; padding: 24px;
+            max-height: 600px; overflow-y: auto; font-size: 13px;
+            line-height: 1.7; white-space: pre-wrap; font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .imbalance-warn {
+            background: var(--amber-bg); border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--amber);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .upload-section { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <div class="logo-icon">&#x2699;</div>
+                <h1>ML Data Advisor <span>by WAT Framework</span></h1>
+            </div>
+            <div class="badge">v1.0</div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="upload-section">
+                <div class="section-title">Analyze Your Dataset</div>
+                <div class="section-desc">
+                    Upload a dataset to get algorithm recommendations, preprocessing guidance, and a full training plan.
+                    Optionally add a Groq API key for AI-powered deep analysis.
+                </div>
+
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">&#128206;</div>
+                    <div class="drop-zone-text">
+                        Drag & drop your dataset here or <strong>click to browse</strong>
+                        <br>CSV, JSON, Parquet, Excel
+                    </div>
+                    <div class="file-name" id="fileName" style="display:none"></div>
+                </div>
+                <input type="file" id="fileInput" accept=".csv,.json,.parquet,.xls,.xlsx" hidden>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label>Target Column (optional)</label>
+                        <input type="text" id="targetCol" placeholder="e.g. price, default, sentiment">
+                        <div class="hint">Leave empty for unsupervised analysis (clustering)</div>
+                    </div>
+                    <div class="field">
+                        <label>Groq API Key (optional)</label>
+                        <input type="password" id="groqKey" placeholder="gsk_xxxxxxxxxxxxxxxx">
+                        <div class="hint">Enables AI-powered deep analysis. <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get a free key</a></div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="analyzeBtn" disabled>
+                    <span class="spinner" id="spinner"></span>
+                    <span id="btnText">Upload a dataset to start</span>
+                </button>
+
+                <div class="error-box" id="errorBox"></div>
+            </div>
+
+            <div class="results" id="results">
+                <div class="result-header">
+                    <h2>Analysis Results</h2>
+                    <span class="elapsed" id="elapsed"></span>
+                </div>
+
+                <div class="stats-grid" id="statsGrid"></div>
+
+                <div class="tabs">
+                    <button class="tab active" data-tab="overview">Overview</button>
+                    <button class="tab" data-tab="algorithms">Algorithms</button>
+                    <button class="tab" data-tab="preprocessing">Preprocessing</button>
+                    <button class="tab" data-tab="groq">AI Insights</button>
+                    <button class="tab" data-tab="report">Full Report</button>
+                </div>
+
+                <div class="tab-content active" id="tab-overview"></div>
+                <div class="tab-content" id="tab-algorithms"></div>
+                <div class="tab-content" id="tab-preprocessing"></div>
+                <div class="tab-content" id="tab-groq"></div>
+                <div class="tab-content" id="tab-report"></div>
+            </div>
+        </div>
+    </main>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileName = document.getElementById('fileName');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const btnText = document.getElementById('btnText');
+const spinner = document.getElementById('spinner');
+const errorBox = document.getElementById('errorBox');
+const resultsEl = document.getElementById('results');
+
+let selectedFile = null;
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) setFile(fileInput.files[0]); });
+
+function setFile(file) {
+    selectedFile = file;
+    dropZone.classList.add('has-file');
+    fileName.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    fileName.style.display = 'block';
+    dropZone.querySelector('.drop-zone-text').style.display = 'none';
+    dropZone.querySelector('.drop-zone-icon').textContent = '\u2705';
+    analyzeBtn.disabled = false;
+    btnText.textContent = 'Analyze Dataset';
+}
+
+analyzeBtn.addEventListener('click', analyze);
+
+async function analyze() {
+    if (!selectedFile) return;
+
+    analyzeBtn.disabled = true;
+    btnText.textContent = 'Analyzing...';
+    spinner.style.display = 'block';
+    errorBox.style.display = 'none';
+    resultsEl.style.display = 'none';
+
+    const form = new FormData();
+    form.append('file', selectedFile);
+    form.append('target', document.getElementById('targetCol').value);
+    form.append('groq_key', document.getElementById('groqKey').value);
+
+    try {
+        const resp = await fetch('/api/analyze', { method: 'POST', body: form });
+        const data = await resp.json();
+
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+
+        renderResults(data);
+    } catch (e) {
+        showError('Request failed. Is the server running?');
+    } finally {
+        analyzeBtn.disabled = false;
+        btnText.textContent = 'Analyze Dataset';
+        spinner.style.display = 'none';
+    }
+}
+
+function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+}
+
+function renderResults(data) {
+    const { profile, recommendations, report_markdown, groq_insights, elapsed_seconds } = data;
+    const problem = recommendations.problem_type;
+    const approach = recommendations.recommended_approach;
+    const target = profile.target_analysis || {};
+    const quality = profile.quality_score || {};
+
+    document.getElementById('elapsed').textContent = `Completed in ${elapsed_seconds}s`;
+
+    // Stats cards
+    const approachClass = approach.approach === 'dl' ? 'approach-dl' : approach.approach === 'ml_first' ? 'approach-ml_first' : 'approach-ml';
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Rows</div>
+            <div class="stat-value">${profile.shape.rows.toLocaleString()}</div>
+            <div class="stat-sub">${profile.shape.columns} columns</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Problem Type</div>
+            <div class="stat-value" style="font-size:16px">${(problem.problem_type || 'unknown').replace(/_/g, ' ')}</div>
+            <div class="stat-sub">Confidence: ${problem.confidence || 'N/A'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Approach</div>
+            <div class="stat-value"><span class="approach-badge ${approachClass}">${approach.approach.replace('_', ' ').toUpperCase()}</span></div>
+            <div class="stat-sub" style="margin-top:6px">${approach.reason}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Quality Score</div>
+            <div class="stat-value">${quality.overall || 0}<span style="font-size:14px;color:var(--text-muted)">/100</span></div>
+            <div class="stat-sub">${quality.completeness || 0}% complete</div>
+        </div>
+    `;
+
+    // Overview tab
+    let overviewHtml = `<div class="card"><div class="card-title">Data Quality</div>`;
+    for (const [key, val] of Object.entries(quality)) {
+        if (key === 'overall') continue;
+        const color = val >= 90 ? 'var(--green)' : val >= 70 ? 'var(--amber)' : 'var(--red)';
+        overviewHtml += `
+            <div class="quality-bar-container">
+                <span class="quality-label">${key.replace(/_/g, ' ')}</span>
+                <div class="quality-bar"><div class="quality-fill" style="width:${val}%;background:${color}"></div></div>
+                <span class="quality-val">${val}%</span>
+            </div>`;
+    }
+    overviewHtml += `</div>`;
+
+    if (target.column) {
+        overviewHtml += `<div class="card"><div class="card-title">Target: <code>${target.column}</code></div>
+            <div style="font-size:14px;color:var(--text-muted)">
+                Type: <strong style="color:var(--text)">${(target.problem_type || '').replace(/_/g, ' ')}</strong>
+                &nbsp;&middot;&nbsp; Unique values: ${target.unique_values || 'N/A'}
+                &nbsp;&middot;&nbsp; Missing: ${target.missing_pct || 0}%
+            </div>`;
+        if (target.class_distribution) {
+            overviewHtml += `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">`;
+            for (const [cls, count] of Object.entries(target.class_distribution)) {
+                overviewHtml += `<span style="background:var(--surface-2);padding:6px 12px;border-radius:8px;font-size:13px">
+                    <strong>${cls}</strong>: ${count.toLocaleString()}</span>`;
+            }
+            overviewHtml += `</div>`;
+        }
+        if (target.is_imbalanced === true || target.is_imbalanced === 'True') {
+            overviewHtml += `<div class="imbalance-warn">Class imbalance detected (${target.imbalance_ratio}:1 ratio). Consider SMOTE, class weights, or focal loss.</div>`;
+        }
+        overviewHtml += `</div>`;
+    }
+
+    overviewHtml += `<div class="card"><div class="card-title">Column Types</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">`;
+    for (const [type, count] of Object.entries(profile.type_summary || {})) {
+        overviewHtml += `<span style="background:var(--surface-2);padding:6px 14px;border-radius:8px;font-size:13px">
+            ${type.replace(/_/g, ' ')}: <strong>${count}</strong></span>`;
+    }
+    overviewHtml += `</div></div>`;
+    document.getElementById('tab-overview').innerHTML = overviewHtml;
+
+    // Algorithms tab
+    const algos = recommendations.recommendations || [];
+    let algoHtml = `<div class="card"><div class="card-title">Ranked Recommendations (${algos.length} algorithms)</div><ul class="algo-list">`;
+    algos.forEach((a, i) => {
+        const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
+        const scoreColor = a.suitability_score >= 80 ? 'var(--green)' : a.suitability_score >= 60 ? 'var(--amber)' : 'var(--red)';
+        algoHtml += `
+            <li class="algo-item">
+                <div class="algo-rank ${rankClass}">#${i+1}</div>
+                <div class="algo-info">
+                    <div class="algo-name">${a.name}</div>
+                    <div class="algo-meta">${a.family.replace(/_/g, ' ')} &middot; ${a.interpretable ? 'Interpretable' : 'Black box'} &middot; Scaling: ${a.needs_scaling ? 'Required' : 'Not needed'}</div>
+                    <div class="algo-meta" style="margin-top:4px">${(a.reasons || []).slice(0, 2).join(' &middot; ')}</div>
+                    <div class="score-bar-bg"><div class="score-bar-fill" style="width:${a.suitability_score}%;background:${scoreColor}"></div></div>
+                </div>
+                <div class="algo-score" style="color:${scoreColor}">${a.suitability_score}</div>
+            </li>`;
+    });
+    algoHtml += `</ul></div>`;
+
+    const evalStrat = recommendations.evaluation_strategy || {};
+    algoHtml += `<div class="card"><div class="card-title">Evaluation Strategy</div>
+        <div style="font-size:14px">
+            <strong>Primary Metric:</strong> ${evalStrat.primary_metric || 'TBD'}<br>
+            <strong>Validation:</strong> ${evalStrat.validation_strategy || 'TBD'}<br>
+            <strong>All Metrics:</strong> ${(evalStrat.metrics || []).join(', ')}
+        </div></div>`;
+    document.getElementById('tab-algorithms').innerHTML = algoHtml;
+
+    // Preprocessing tab
+    const steps = recommendations.preprocessing_steps || [];
+    let prepHtml = `<div class="card"><div class="card-title">Preprocessing Pipeline (${steps.length} steps)</div>`;
+    steps.forEach((s, i) => {
+        prepHtml += `
+            <div class="preprocess-step">
+                <span class="step-num">${i+1}</span><strong>${s.step}</strong>
+                <div class="step-reason">${s.reason}</div>
+                <div style="margin-left:30px;margin-top:6px;font-size:13px;color:var(--text-muted)">
+                    ${(s.approaches || []).map(a => `<div style="margin-bottom:2px">&bull; ${a}</div>`).join('')}
+                </div>
+                <div style="margin-left:30px;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+                    ${(s.tools || []).map(t => `<code style="font-size:11px;background:var(--surface-2);padding:2px 8px;border-radius:4px">${t}</code>`).join('')}
+                </div>
+            </div>`;
+    });
+    prepHtml += `</div>`;
+    document.getElementById('tab-preprocessing').innerHTML = prepHtml;
+
+    // Groq tab
+    let groqHtml = '';
+    if (groq_insights && groq_insights.status === 'success' && groq_insights.analysis) {
+        groqHtml = `<div class="card groq-section">
+            <div class="card-title">AI Deep Analysis <span class="groq-badge">Powered by ${groq_insights.model}</span></div>
+            <div class="groq-content">${escapeHtml(groq_insights.analysis)}</div></div>`;
+    } else if (groq_insights && groq_insights.status === 'error') {
+        groqHtml = `<div class="card"><div class="card-title">AI Deep Analysis</div>
+            <div class="groq-error">${groq_insights.message}</div></div>`;
+    } else {
+        groqHtml = `<div class="card"><div class="card-title">AI Deep Analysis</div>
+            <div style="color:var(--text-muted);font-size:14px">
+                Enter a Groq API key above and re-analyze to get AI-powered insights.<br>
+                <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get a free Groq API key &rarr;</a>
+            </div></div>`;
+    }
+    document.getElementById('tab-groq').innerHTML = groqHtml;
+
+    // Report tab
+    document.getElementById('tab-report').innerHTML = `
+        <div class="card">
+            <div class="card-title">Full Training Plan Report</div>
+            <div class="report-preview">${escapeHtml(report_markdown)}</div>
+        </div>`;
+
+    resultsEl.style.display = 'block';
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+    });
+});
+</script>
+</body>
+</html>
